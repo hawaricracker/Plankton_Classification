@@ -218,7 +218,7 @@ class Plank_li_net(nn.Module):
         final_cat = torch.cat([self.lscd1(b2_b1_cat), self.lscd2(adown_b3_b2_cat), self.lscd3(adown_last_b3_cat)], dim=1)
         return self.linear(final_cat)
 
-class ResBlock(nn.Module):
+class SiReconBlock(nn.Module):
     def __init__(self, in_ch, out_ch):
         super().__init__()
         self.proj = nn.Sequential(
@@ -233,14 +233,14 @@ class ResBlock(nn.Module):
     def forward(self, x):
         return self.relu(self.net(x) + self.proj(x))
 
-class Plank_Resnet(nn.Module):
+class Plank_SiRecon(nn.Module):
     def __init__(self, num_classes):
         super().__init__()
         self.network = nn.Sequential(
-            ResBlock(1, 32), nn.MaxPool2d(2),
-            ResBlock(32, 64), nn.MaxPool2d(2),
-            ResBlock(64, 128), nn.MaxPool2d(2),
-            ResBlock(128, 256),
+            SiReconBlock(1, 32), nn.MaxPool2d(2),
+            SiReconBlock(32, 64), nn.MaxPool2d(2),
+            SiReconBlock(64, 128), nn.MaxPool2d(2),
+            SiReconBlock(128, 256),
         )
         self.linear = nn.Sequential(
             nn.AdaptiveAvgPool2d(1), nn.Flatten(), nn.Linear(256, num_classes)
@@ -249,7 +249,7 @@ class Plank_Resnet(nn.Module):
     def forward(self, x):
         return self.linear(self.network(x))
 
-class ResDepthConv(nn.Module):
+class SiDSCConv(nn.Module):
     def __init__(self, in_channels, out_channels):
         super().__init__()
         self.proj = nn.Sequential(nn.Conv2d(in_channels, out_channels, 1), nn.BatchNorm2d(out_channels))
@@ -266,15 +266,15 @@ class ResDepthConv(nn.Module):
         out = out + self.proj(x)
         return self.relu(out)
 
-class Plank_Resdepth(nn.Module):
+class Plank_SiDSC(nn.Module):
     def __init__(self, num_classes):
         super().__init__()
         self.linear = nn.Sequential(nn.AdaptiveAvgPool2d(1), nn.Flatten(), nn.Linear(512, num_classes))
         self.network = nn.Sequential(
-            ResDepthConv(1, 64), nn.MaxPool2d(2),
-            ResDepthConv(64, 128), nn.MaxPool2d(2),
-            ResDepthConv(128, 256), nn.MaxPool2d(2),
-            ResDepthConv(256, 512),
+            SiDSCConv(1, 64), nn.MaxPool2d(2),
+            SiDSCConv(64, 128), nn.MaxPool2d(2),
+            SiDSCConv(128, 256), nn.MaxPool2d(2),
+            SiDSCConv(256, 512),
         )
 
     def forward(self, x):
@@ -285,10 +285,10 @@ def create_model(model_name, num_classes, device):
     """Buat model berdasarkan nama, pindahkan ke device."""
     if model_name == 'linet':
         model = Plank_li_net(num_classes).to(device)
-    elif model_name == 'resnet':
-        model = Plank_Resnet(num_classes).to(device)
-    elif model_name == 'resdepth':
-        model = Plank_Resdepth(num_classes).to(device)
+    elif model_name == 'Si-Recon':
+        model = Plank_SiRecon(num_classes).to(device)
+    elif model_name == 'Si-DSC':
+        model = Plank_SiDSC(num_classes).to(device)
     elif model_name == 'yolo':
         obj = torch.load("yolo26m-cls.pt", weights_only=False)
         model = obj['model']
