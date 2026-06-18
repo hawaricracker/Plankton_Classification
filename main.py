@@ -114,7 +114,7 @@ if __name__ == '__main__':
 
     # ── Model ──────────────────────────────────────────────────────────────────
     num_classes = len(label_counts)
-    model = create_model(args.model, num_classes, device)
+    model = create_model(args.model, num_classes, device, input_size=SIZE)
 
     # ── Training ───────────────────────────────────────────────────────────────
     best_model, best_val_acc, history = train_model(
