@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import math
 
 class ConvBNAct(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, groups=1, use_act=True):
@@ -280,10 +281,6 @@ class Plank_SiDSC(nn.Module):
     def forward(self, x):
         out = self.network(x)
         return self.linear(out)
-
-import torch
-import torch.nn as nn
-import math
 
 def window_partition(x, window_size):
     B,H,W,C = x.shape
