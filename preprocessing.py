@@ -167,7 +167,7 @@ def load_and_filter_data(ds, maks_sampel=100):
     prohibited_label = []
 
     for i in label_counts.keys():
-        if label_counts[i] > 100 and i not in prohibited_label:
+        if i not in prohibited_label:
             filtered_labels[i] = 0
             new_map_label[label_names[i]] = (i, new_idx)
             new_idx += 1
@@ -197,7 +197,7 @@ def load_and_filter_data(ds, maks_sampel=100):
         except Exception:
             continue
         data = ds['test'][i]
-        if data['label'] in filtered_labels.keys() and filtered_labels_test[data['label']] < 25:
+        if data['label'] in filtered_labels.keys() and filtered_labels_test[data['label']] < maks_sampel:
             tmp = data.copy()
             tmp['label'] = new_map_label[label_names[data['label']]][1]
             data_test.append(tmp)
@@ -214,7 +214,7 @@ def load_and_filter_data(ds, maks_sampel=100):
         except Exception:
             continue
         data = ds['validation'][i]
-        if data['label'] in filtered_labels.keys() and filtered_labels_val[data['label']] < 15:
+        if data['label'] in filtered_labels.keys() and filtered_labels_val[data['label']] < maks_sampel:
             tmp = data.copy()
             tmp['label'] = new_map_label[label_names[data['label']]][1]
             data_val.append(tmp)

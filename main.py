@@ -88,7 +88,7 @@ if __name__ == '__main__':
     plt.close()
 
     weighted_class = [
-        len(data_train) / (100 * label_counts[i]) for i in label_counts
+        len(data_train) / (len(label_counts) * label_counts[i]) for i in label_counts
     ]
 
     # ── Augmentasi sequential ──────────────────────────────────────────────────

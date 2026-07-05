@@ -1,16 +1,54 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from typing import Optional
+from torch import Tensor
+import torch.nn.functional as F
 import copy
 import time
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
+class Focal_Loss(nn.CrossEntropyLoss):
+    __constants__ = ["ignore_index", "reduction", "label_smoothing"]
+    ignore_index: int
+    label_smoothing: float
+
+    def __init__(
+        self,
+        weight: Optional[Tensor] = None,
+        size_average=None,
+        ignore_index: int = -100,
+        reduce=None,
+        reduction: str = "none",
+        label_smoothing: float = 0.0,
+    ) -> None:
+        super().__init__(weight, size_average, ignore_index, reduce, reduction, label_smoothing)
+        self.ignore_index = ignore_index
+        self.label_smoothing = label_smoothing
+
+    def forward(self, input: Tensor, target: Tensor, alpha: Tensor) -> Tensor:
+        ce = F.cross_entropy(
+            input,
+            target,
+            weight=self.weight,
+            ignore_index=self.ignore_index,
+            reduction=self.reduction,
+            label_smoothing=self.label_smoothing,
+        )
+
+        fl = []
+
+        for i in range(len(target)):
+            fl.append(alpha[target[i]]*((1-torch.exp(-ce[i]))**2)*ce[i])
+
+        return torch.stack(fl).mean()
+
 def train_model(model, train_loader, val_loader, device, model_name,
                 epochs=100, lr=5e-3, weighted_class=None):
     """Training loop + validation. Return best model, history."""
-    criterion = nn.CrossEntropyLoss()
+    criterion = Focal_Loss()
     optimizer = optim.Adam(model.parameters(), lr=lr)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=5e-6)
 
@@ -31,7 +69,7 @@ def train_model(model, train_loader, val_loader, device, model_name,
             outputs = model(inputs)
             if model_name == 'yolo':
                 outputs = outputs[:]
-            loss = criterion(outputs, labels)
+            loss = criterion(outputs, labels, weighted_class)
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
@@ -51,7 +89,7 @@ def train_model(model, train_loader, val_loader, device, model_name,
                 outputs = model(inputs)
                 if model_name == 'yolo':
                     outputs = outputs[0]
-                val_loss += criterion(outputs, labels).item() * labels.size(0)
+                val_loss += criterion(outputs, labels, weighted_class).item() * labels.size(0)
                 correct_val += (outputs.argmax(1) == labels).sum().item()
 
         avg_val_loss = val_loss / len(val_loader.dataset)
