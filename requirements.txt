@@ -1,0 +1,7 @@
+argparse
+numpy
+torch
+matplotlib
+opencv-python
+pillow
+scikit-learn
