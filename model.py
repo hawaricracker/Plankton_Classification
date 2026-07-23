@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math
+from torchvision.models import mobilenet_v3_small, MobileNet_V3_Small_Weights
 
 class ConvBNAct(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, groups=1, use_act=True):
@@ -731,6 +732,21 @@ def create_model(model_name, num_classes, device, input_size=None):
                 print(f'Reset:{name}')
         for p in model.parameters():
             p.requires_grad = True
+    elif model_name == 'mobilenet':
+        model = mobilenet_v3_small(weights=None)
+
+        old_conv = model.features[0][0]
+        model.features[0][0] = nn.Conv2d(
+            in_channels=1,
+            out_channels=old_conv.out_channels,
+            kernel_size=old_conv.kernel_size,
+            stride=old_conv.stride,
+            padding=old_conv.padding,
+            bias=old_conv.bias,
+        )
+
+        in_features = model.classifier[3].in_features
+        model.classifier[3] = nn.Linear(in_features, 81)
     else:
         raise ValueError(f"Unknown model: {model_name}")
 
