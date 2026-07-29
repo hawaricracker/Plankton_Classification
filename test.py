@@ -152,8 +152,7 @@ def evaluate_model(model, test_loader, device, model_name, log_file, size):
     torch.onnx.export(
         model, dummy, f"plankton_classifier_model_{model_name}.onnx",
         input_names=["image"], output_names=["logits"],
-        opset_version=18,
-        dynamic_axes={"image": {0: "batch"}, "logits": {0: "batch"}},
+        opset_version=12,
     )
     print(f"Model saved -> plankton_classifier_{model_name}.onnx")
 
